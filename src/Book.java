@@ -6,7 +6,7 @@ public record Book(String title, String author, double price, int pages) {
             throw new IllegalArgumentException("title must not be blank");
         if (author == null || author.isBlank())
             throw new IllegalArgumentException("author must not be blank");
-        if (Double.isNaN(price) || Double.isInfinite(price) || price < 0.0)
+        if (!Double.isFinite(price) || price < 0.0)
             throw new IllegalArgumentException("price must be finite and non-negative");
         if (pages <= 0)
             throw new IllegalArgumentException("pages must be strictly positive");
