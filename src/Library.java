@@ -1,63 +1,55 @@
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class Library {
+    //region collection
     private final List<Book> books = new ArrayList<>();
 
     public Library() {}
     public Library(List<Book> initialBooks) { if (initialBooks != null) initialBooks.forEach(this::addBook); }
+
     public void addBook(Book book) { if (book != null) books.add(book); }
     public List<Book> getBooks() { return List.copyOf(books); }
+    //endregion
 
-    public List<Book> getBooksByAuthor(String author) { return getBooksByAuthor(this.books, author); }
-    public double averagePages() { return averagePages(this.books); }
-    public List<Book> booksUnderPrice(double maxPrice) { return booksUnderPrice(this.books, maxPrice); }
-    public Book mostExpensive() { return mostExpensive(this.books); }
-    public List<Book> booksWithMinPages(int minPages) { return booksWithMinPages(this.books, minPages); }
-    public List<Book> bestPairWithinBudget(double budget) { return bestPairWithinBudget(this.books, budget); }
-
-    public static List<Book> getBooksByAuthor(List<Book> books, String author) {
+    //region assignment
+    public List<Book> getBooksByAuthor(String author) {
         if (author == null || author.isBlank()) return List.of();
         String target = author.strip();
-        return valid(books).filter(b -> b.getAuthor().equalsIgnoreCase(target)).toList();
+        return books.stream().filter(b -> b.author().equalsIgnoreCase(target)).toList();
     }
 
     public static double averagePages(List<Book> books) {
-        return valid(books).mapToInt(Book::getPages).average().orElse(0.0);
+        return books == null ? 0.0 : books.stream().mapToInt(Book::pages).average().orElse(0.0);
     }
 
     public static List<Book> booksUnderPrice(List<Book> books, double maxPrice) {
-        return valid(books).filter(b -> b.getPrice() <= maxPrice).toList();
+        return books == null ? List.of() : books.stream().filter(b -> b.price() <= maxPrice).toList();
     }
 
     public static Book mostExpensive(List<Book> books) {
-        return valid(books).max(Comparator.comparingDouble(Book::getPrice)).orElse(null);
+        return books == null ? null : books.stream().max(Comparator.comparingDouble(Book::price)).orElse(null);
     }
 
     public static List<Book> booksWithMinPages(List<Book> books, int minPages) {
-        return valid(books).filter(b -> b.getPages() >= minPages).toList();
+        return books == null ? List.of() : books.stream().filter(b -> b.pages() >= minPages).toList();
     }
 
     public static List<Book> bestPairWithinBudget(List<Book> books, double budget) {
-        List<Book> clean = valid(books).distinct().toList();
+        if (books == null || books.size() < 2) return List.of();
         record Pair(Book a, Book b) {
-            double getPrice() { return a.getPrice() + b.getPrice(); }
-            int getPages() { return a.getPages() + b.getPages(); }
+            double price() { return a.price() + b.price(); }
+            int pages() { return a.pages() + b.pages(); }
         }
-        return IntStream.range(0, clean.size()).boxed()
-                .flatMap(i -> IntStream.range(i + 1, clean.size())
-                        .mapToObj(j -> new Pair(clean.get(i), clean.get(j))))
-                .filter(p -> p.getPrice() <= budget)
-                .max(Comparator.comparingDouble(Pair::getPrice).thenComparingInt(Pair::getPages))
+
+        return IntStream.range(0, books.size()).boxed()
+                .flatMap(i -> IntStream.range(i + 1, books.size()).mapToObj(j -> new Pair(books.get(i), books.get(j))))
+                .filter(p -> !p.a().equals(p.b()) && p.price() <= budget)
+                .max(Comparator.comparingDouble(Pair::price).thenComparingInt(Pair::pages))
                 .map(p -> List.of(p.a(), p.b()))
                 .orElseGet(List::of);
     }
-
-    private static Stream<Book> valid(List<Book> books) {
-        return books == null ? Stream.empty() : books.stream().filter(Objects::nonNull);
-    }
+    //endregion
 }
